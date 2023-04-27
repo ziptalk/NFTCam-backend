@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 public class MaterialSaveRequestDto {
     private String title;
     private String device;
-    private String address;
     private String takenAt;
-    private Long latitude;
-    private Long longitude;
+    private String latitude;
+    private String longitude;
+
 }
