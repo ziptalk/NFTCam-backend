@@ -23,6 +23,14 @@ import java.util.List;
 public class MaterialController {
     private final MaterialService materialService;
 
+//    @PostMapping(value = "/new")
+//    public ResponseEntity<?> createMaterial(@AuthenticationPrincipal UserAccount userAccount,
+//                                            @RequestPart MultipartFile image,
+//                                            @RequestPart String dto) {
+//        return ResponseEntity.ok().body(materialService.createMaterial(userAccount));
+//    }
+
+
     @GetMapping(value = "/list")
     public ResponseEntity<DataResponseDto<List<MaterialCardResponseDto>>> getHomePageList
             (

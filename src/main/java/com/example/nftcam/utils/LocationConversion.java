@@ -4,10 +4,9 @@ package com.example.nftcam.utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.configurationprocessor.json.JSONException;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.BufferedReader;
@@ -83,7 +82,7 @@ public class LocationConversion {
     /**
      * JSON형태의 String 데이터에서 주소값(address_name)만 받아오기
      */
-    public String getRegionAddress(String jsonString) throws JSONException {
+    public String getRegionAddress(String jsonString) {
         String value = "";
         JSONObject jObj = (JSONObject) JSONValue.parse(jsonString);
         JSONObject meta = (JSONObject) jObj.get("meta");
