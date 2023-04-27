@@ -47,8 +47,14 @@ public class MaterialService {
 
     @Transactional
     public DataResponseDto<MaterialDetailResponseDto> getMaterialDetail(UserAccount userAccount, Long materialId) {
-        MaterialDetailResponseDto materialDetailResponseDto = MaterialDetailResponseDto.of(materialRepository.findById(materialId)
-                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 data 입니다.").build()));
+        Material material = materialRepository.findById(materialId)
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 data 입니다.").build());
+
+        if (!material.getUser().getId().equals(userAccount.getUserId())) {
+            throw CustomException.builder().httpStatus(HttpStatus.UNPROCESSABLE_ENTITY).message("해당 data에 대한 권한이 없습니다.").build();
+        }
+
+        MaterialDetailResponseDto materialDetailResponseDto = MaterialDetailResponseDto.of(material);
 
         return DataResponseDto.<MaterialDetailResponseDto>builder()
                 .data(materialDetailResponseDto)
