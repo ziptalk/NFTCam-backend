@@ -38,4 +38,10 @@ public class MaterialController {
     public ResponseEntity<DataResponseDto<MaterialDetailResponseDto>> getMaterialDetail(@AuthenticationPrincipal UserAccount userAccount, @PathVariable Long materialId) {
         return ResponseEntity.ok().body(materialService.getMaterialDetail(userAccount, materialId));
     }
+
+    @GetMapping(value = "/test")
+    public ResponseEntity<?> test() {
+        materialService.test();
+        return ResponseEntity.ok().build();
+    }
 }

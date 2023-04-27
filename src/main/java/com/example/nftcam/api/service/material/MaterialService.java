@@ -7,6 +7,7 @@ import com.example.nftcam.api.entity.material.MaterialRepository;
 import com.example.nftcam.api.entity.user.UserRepository;
 import com.example.nftcam.api.entity.user.details.UserAccount;
 import com.example.nftcam.exception.custom.CustomException;
+import com.example.nftcam.utils.LocationConversion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -43,5 +44,10 @@ public class MaterialService {
         return DataResponseDto.<MaterialDetailResponseDto>builder()
                 .data(materialDetailResponseDto)
                 .build();
+    }
+
+    public void test() {
+        LocationConversion locationConversion = new LocationConversion();
+        locationConversion.coordToAddr( "127.029296","37.496442");
     }
 }
