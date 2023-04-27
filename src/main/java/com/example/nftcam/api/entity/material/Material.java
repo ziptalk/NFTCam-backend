@@ -50,8 +50,9 @@ public class Material {
     private User user;
 
     @Builder
-    public Material(String title, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
+    public Material(String title, String source, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
         this.title = title;
+        this.source = source;
         this.isMinting = isMinting;
         this.device = device;
         this.address = address;
@@ -61,9 +62,10 @@ public class Material {
         this.user = user;
     }
 
-    public static Material of(String title, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
+    public static Material of(String title, String source, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
         return Material.builder()
                 .title(title)
+                .source(source)
                 .isMinting(isMinting)
                 .device(device)
                 .address(address)
