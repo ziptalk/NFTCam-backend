@@ -21,6 +21,7 @@ public class MaterialRepositoryCustomImpl implements MaterialRepositoryCustom {
         JPAQuery<Material> query = jpaQueryFactory
                 .selectFrom(material)
                 .where(
+                        material.user.id.eq(userId),
                         ltMaterialId(cursorId)
                 )
                 .orderBy(material.createdAt.desc())
