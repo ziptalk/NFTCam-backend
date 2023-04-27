@@ -55,10 +55,6 @@ public class MaterialService {
                 .build();
     }
 
-    public String test() {
-        return locationConversion.coordToAddr("127.029296", "37.496442");
-    }
-
     @Transactional
     public void createMaterial(UserAccount userAccount, MultipartFile image, MaterialSaveRequestDto materialSaveRequestDto) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

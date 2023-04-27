@@ -55,9 +55,4 @@ public class MaterialController {
         return ResponseEntity.ok().body(materialService.getMaterialDetail(userAccount, materialId));
     }
 
-    @GetMapping(value = "/test")
-    public ResponseEntity<?> test() {
-        String test = materialService.test();
-        return ResponseEntity.ok().body(test);
-    }
 }
