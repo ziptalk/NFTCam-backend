@@ -1,12 +1,16 @@
 package com.example.nftcam.api.service.material;
 
+import com.example.nftcam.api.dto.material.request.MaterialSaveRequestDto;
 import com.example.nftcam.api.dto.material.response.MaterialCardResponseDto;
 import com.example.nftcam.api.dto.material.response.MaterialDetailResponseDto;
 import com.example.nftcam.api.dto.util.DataResponseDto;
+import com.example.nftcam.api.entity.material.Material;
 import com.example.nftcam.api.entity.material.MaterialRepository;
+import com.example.nftcam.api.entity.user.User;
 import com.example.nftcam.api.entity.user.UserRepository;
 import com.example.nftcam.api.entity.user.details.UserAccount;
 import com.example.nftcam.exception.custom.CustomException;
+import com.example.nftcam.utils.AmazonS3Uploader;
 import com.example.nftcam.utils.LocationConversion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +18,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +32,7 @@ public class MaterialService {
     private final UserRepository userRepository;
     private final MaterialRepository materialRepository;
     private final LocationConversion locationConversion;
+    private final AmazonS3Uploader amazonS3Uploader;
 
     @Transactional(readOnly = true)
     public DataResponseDto<List<MaterialCardResponseDto>> getMaterialCardList(UserAccount userAccount, Long cursor, Pageable pageable) {
@@ -49,5 +57,31 @@ public class MaterialService {
 
     public String test() {
         return locationConversion.coordToAddr("127.029296", "37.496442");
+    }
+
+    @Transactional
+    public void createMaterial(UserAccount userAccount, MultipartFile image, MaterialSaveRequestDto materialSaveRequestDto) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String imageUrl = null;
+        User user = userRepository.findById(userAccount.getUserId())
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
+
+        try {
+            imageUrl = amazonS3Uploader.saveFileAndGetUrl(image);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("이미지 업로드에 실패했습니다.").build();
+        }
+        String coordToAddr = locationConversion.coordToAddr(materialSaveRequestDto.getLongitude(), materialSaveRequestDto.getLatitude());
+
+        materialRepository.save(Material.builder()
+                            .title(materialSaveRequestDto.getTitle())
+                            .source(imageUrl)
+                            .isMinting(false)
+                            .device(materialSaveRequestDto.getDevice())
+                            .address(coordToAddr)
+                            .takenAt(LocalDateTime.parse(materialSaveRequestDto.getTakenAt(), formatter))
+                            .user(user)
+                            .build());
     }
 }
