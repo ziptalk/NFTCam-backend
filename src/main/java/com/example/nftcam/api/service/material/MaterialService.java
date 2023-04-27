@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class MaterialService {
     private final UserRepository userRepository;
     private final MaterialRepository materialRepository;
+    private final LocationConversion locationConversion;
 
     @Transactional(readOnly = true)
     public DataResponseDto<List<MaterialCardResponseDto>> getMaterialCardList(UserAccount userAccount, Long cursor, Pageable pageable) {
@@ -46,8 +47,7 @@ public class MaterialService {
                 .build();
     }
 
-    public void test() {
-        LocationConversion locationConversion = new LocationConversion();
-        locationConversion.coordToAddr( "127.029296","37.496442");
+    public String test() {
+        return locationConversion.coordToAddr("127.029296", "37.496442");
     }
 }

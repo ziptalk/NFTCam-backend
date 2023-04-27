@@ -41,7 +41,7 @@ public class MaterialController {
 
     @GetMapping(value = "/test")
     public ResponseEntity<?> test() {
-        materialService.test();
-        return ResponseEntity.ok().build();
+        String test = materialService.test();
+        return ResponseEntity.ok().body(test);
     }
 }

@@ -1,12 +1,14 @@
 package com.example.nftcam.utils;
 
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.context.annotation.Configuration;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -15,11 +17,9 @@ import java.net.URL;
 import java.nio.charset.Charset;
 
 @Slf4j
+@Configuration
+@RequiredArgsConstructor
 public class LocationConversion {
-
-    @Value("${kakao.admin-key}")
-    private String adminKey;
-
     @Value("${kakao.rest-key}")
     private String restKey;
 
@@ -58,7 +58,6 @@ public class LocationConversion {
 
         //request에 JSON data 준비
         conn.setDoOutput(true);
-
         //보내고 결과값 받기
         int responseCode = conn.getResponseCode();
         if (responseCode == 400) {
