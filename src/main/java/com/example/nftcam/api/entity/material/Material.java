@@ -1,5 +1,6 @@
 package com.example.nftcam.api.entity.material;
 
+import com.example.nftcam.api.entity.user.User;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,6 +20,9 @@ public class Material {
 
     @Column(name = "material_title", nullable = false)
     private String title;
+
+    @Column(name = "material_source", nullable = false)
+    private String source;
 
     @Column(name = "material_nft_id")
     private String nftId;
@@ -41,8 +45,12 @@ public class Material {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User user;
+
     @Builder
-    public Material(String title, Boolean isMinting, String device, String address, LocalDateTime takenAt) {
+    public Material(String title, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
         this.title = title;
         this.isMinting = isMinting;
         this.device = device;
@@ -50,15 +58,17 @@ public class Material {
         this.takenAt = takenAt;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.user = user;
     }
 
-    public Material of(String title, Boolean isMinting, String device, String address, LocalDateTime takenAt) {
+    public static Material of(String title, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
         return Material.builder()
                 .title(title)
                 .isMinting(isMinting)
                 .device(device)
                 .address(address)
                 .takenAt(takenAt)
+                .user(user)
                 .build();
     }
 

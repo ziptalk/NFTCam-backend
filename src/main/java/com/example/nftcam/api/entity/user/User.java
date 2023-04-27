@@ -1,5 +1,6 @@
 package com.example.nftcam.api.entity.user;
 
+import com.example.nftcam.api.entity.material.Material;
 import com.example.nftcam.api.entity.token.UserToken;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -37,6 +39,9 @@ public class User {
     @Column(name = "user_role")
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @OneToMany(mappedBy = "user")
+    private List<Material> materials;
 
     @Builder
     public User(String uuid, Role role) {
