@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -125,8 +127,20 @@ public class MaterialService {
     public void deleteMaterial(UserAccount userAccount, Long materialId) {
         User user = userRepository.findById(userAccount.getUserId())
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
+
         Material material = materialRepository.findByIdAndUser_Id(materialId, user.getId())
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않거나 material 소유자가 아닙니다.").build());
+
+        int lastIndex = material.getSource().lastIndexOf('/')+1;
+        String fileName = material.getSource().substring(lastIndex);
+        String decodedFileName = null;
+        try {
+            decodedFileName = URLDecoder.decode(fileName, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("파일 이름 디코딩에 실패했습니다.").build();
+        }
+        amazonS3Uploader.deleteFile(decodedFileName);
+
         materialRepository.delete(material);
     }
 }
