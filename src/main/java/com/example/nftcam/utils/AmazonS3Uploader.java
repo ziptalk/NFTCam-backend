@@ -35,4 +35,16 @@ public class AmazonS3Uploader {
 
         return amazonS3.getUrl(bucket, s3FileName).toString();
     }
+
+    public void deleteFile(String uuidFileName) {
+        try {
+            String keyName = imagePath + uuidFileName;
+            boolean isObjectExist = amazonS3.doesObjectExist(bucket, keyName);
+            if (isObjectExist) {
+                amazonS3.deleteObject(bucket, keyName);
+            }
+        } catch (Exception e) {
+            log.debug("Delete File failed", e);
+        }
+    }
 }
