@@ -1,5 +1,6 @@
 package com.example.nftcam.api.service.material;
 
+import com.example.nftcam.api.dto.material.request.MaterialModifyRequestDto;
 import com.example.nftcam.api.dto.material.request.MaterialSaveRequestDto;
 import com.example.nftcam.api.dto.material.response.MaterialCardResponseDto;
 import com.example.nftcam.api.dto.material.response.MaterialDetailResponseDto;
@@ -51,7 +52,7 @@ public class MaterialService {
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 data 입니다.").build());
 
         if (!material.getUser().getId().equals(userAccount.getUserId())) {
-            throw CustomException.builder().httpStatus(HttpStatus.UNPROCESSABLE_ENTITY).message("해당 data에 대한 권한이 없습니다.").build();
+            throw CustomException.builder().httpStatus(HttpStatus.UNPROCESSABLE_ENTITY).message("존재하지 않거나 material 소유자가 아닙니다.").build();
         }
 
         MaterialDetailResponseDto materialDetailResponseDto = MaterialDetailResponseDto.of(material);
@@ -62,8 +63,26 @@ public class MaterialService {
     }
 
     @Transactional
-    public void createMaterial(UserAccount userAccount, MultipartFile image, MaterialSaveRequestDto materialSaveRequestDto) {
+    public Long createMaterial(UserAccount userAccount, MaterialSaveRequestDto materialSaveRequestDto) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        User user = userRepository.findById(userAccount.getUserId())
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
+        String coordToAddr = locationConversion.coordToAddr(materialSaveRequestDto.getLongitude(), materialSaveRequestDto.getLatitude());
+
+        Material material = materialRepository.save(Material.builder()
+                .title(materialSaveRequestDto.getTitle())
+                .isMinting(false)
+                .device(materialSaveRequestDto.getDevice())
+                .address(coordToAddr)
+                .takenAt(LocalDateTime.parse(materialSaveRequestDto.getTakenAt(), formatter))
+                .user(user)
+                .build());
+
+        return material.getId();
+    }
+
+    @Transactional
+    public Long updateImageToMaterial(UserAccount userAccount, MultipartFile image, Long materialId){
         String imageUrl = null;
         User user = userRepository.findById(userAccount.getUserId())
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
@@ -74,16 +93,40 @@ public class MaterialService {
             System.out.println(e.getMessage());
             throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("이미지 업로드에 실패했습니다.").build();
         }
-        String coordToAddr = locationConversion.coordToAddr(materialSaveRequestDto.getLongitude(), materialSaveRequestDto.getLatitude());
 
-        materialRepository.save(Material.builder()
-                            .title(materialSaveRequestDto.getTitle())
-                            .source(imageUrl)
-                            .isMinting(false)
-                            .device(materialSaveRequestDto.getDevice())
-                            .address(coordToAddr)
-                            .takenAt(LocalDateTime.parse(materialSaveRequestDto.getTakenAt(), formatter))
-                            .user(user)
-                            .build());
+        Material material = materialRepository.findByIdAndUser_Id(materialId, user.getId())
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않거나 material 소유자가 아닙니다.").build());
+
+        material.updateImageUrl(imageUrl);
+        return material.getId();
+    }
+
+    @Transactional
+    public Long updateMaterialTitle(UserAccount userAccount, Long materialId, MaterialModifyRequestDto materialModifyRequestDto) {
+        User user = userRepository.findById(userAccount.getUserId())
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
+        Material material = materialRepository.findByIdAndUser_Id(materialId, user.getId())
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않거나 material 소유자가 아닙니다.").build());
+        material.updateTitle(materialModifyRequestDto.getTitle());
+        return material.getId();
+    }
+
+    @Transactional
+    public Long mintingMaterial(UserAccount userAccount, Long materialId) {
+        User user = userRepository.findById(userAccount.getUserId())
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
+        Material material = materialRepository.findByIdAndUser_Id(materialId, user.getId())
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않거나 material 소유자가 아닙니다.").build());
+        material.updateNFTId("ON PROGRESS...");
+        return material.getId();
+    }
+
+    @Transactional
+    public void deleteMaterial(UserAccount userAccount, Long materialId) {
+        User user = userRepository.findById(userAccount.getUserId())
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
+        Material material = materialRepository.findByIdAndUser_Id(materialId, user.getId())
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않거나 material 소유자가 아닙니다.").build());
+        materialRepository.delete(material);
     }
 }
