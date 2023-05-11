@@ -21,7 +21,7 @@ public class Material {
     @Column(name = "material_title", nullable = false)
     private String title;
 
-    @Column(name = "material_source", nullable = false)
+    @Column(name = "material_source")
     private String source;
 
     @Column(name = "material_nft_id")
@@ -77,6 +77,16 @@ public class Material {
     public void updateNFTId(String nftId) {
         this.nftId = nftId;
         this.isMinting = true;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateImageUrl(String url) {
+        this.source = url;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateTitle(String title) {
+        this.title = title;
         this.updatedAt = LocalDateTime.now();
     }
 }
