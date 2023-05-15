@@ -13,14 +13,16 @@ import java.time.format.DateTimeFormatter;
 public class MaterialCardResponseDto {
     private Long materialId;
     private String source;
+    private boolean isMinting;
     private String date;
     private String device;
     private String address;
 
     @Builder
-    public MaterialCardResponseDto(Long materialId, String source, String date, String device, String address) {
+    public MaterialCardResponseDto(Long materialId, String source, boolean isMinting, String date, String device, String address) {
         this.materialId = materialId;
         this.source = source;
+        this.isMinting = isMinting;
         this.date = date;
         this.device = device;
         this.address = address;
@@ -31,6 +33,7 @@ public class MaterialCardResponseDto {
         return MaterialCardResponseDto.builder()
                 .materialId(material.getId())
                 .source(material.getSource())
+                .isMinting(material.getIsMinting())
                 .date(material.getTakenAt().format(formatter))
                 .device(material.getDevice())
                 .address(material.getAddress())
