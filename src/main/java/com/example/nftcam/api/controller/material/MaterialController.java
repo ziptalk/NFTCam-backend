@@ -47,7 +47,7 @@ public class MaterialController {
                 .replacePath("/api/material/save/image/{materialId}")
                 .buildAndExpand(material)
                 .toUri();
-        return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();
+        return ResponseEntity.created(location).build();
     }
 
 
@@ -56,7 +56,7 @@ public class MaterialController {
             (
                     @AuthenticationPrincipal UserAccount userAccount,
                     @Nullable @RequestParam Long cursor,
-                    @PageableDefault(size = 6) Pageable pageable
+                    @PageableDefault(size = 8) Pageable pageable
             )
     {
         return ResponseEntity.ok().body(materialService.getMaterialCardList(userAccount, cursor, pageable));
