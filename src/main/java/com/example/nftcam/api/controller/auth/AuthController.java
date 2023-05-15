@@ -24,4 +24,10 @@ public class AuthController {
         LoginResponseDto loginResponseDto = authService.loginAndRegister(loginRequestDto);
         return ResponseEntity.ok().body(loginResponseDto);
     }
+
+//    @PutMapping("/reissue")
+//    public ResponseEntity<LoginResponseDto> reissue(@RequestBody LoginRequestDto loginRequestDto) {
+//        LoginResponseDto loginResponseDto = authService.reissue(loginRequestDto);
+//        return ResponseEntity.ok().body(loginResponseDto);
+//    }
 }

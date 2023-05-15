@@ -34,4 +34,9 @@ public class AuthService {
                 );
         return LoginResponseDto.of(accessToken, refreshToken);
     }
+
+//    @Transactional
+//    public LoginResponseDto reissue(LoginRequestDto loginRequestDto) {
+//
+//    }
 }
