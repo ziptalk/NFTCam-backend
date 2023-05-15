@@ -7,18 +7,18 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class LoginResponseDto {
+public class IssueTokenResponseDto {
     private String accessToken;
     private String refreshToken;
 
     @Builder
-    public LoginResponseDto(String accessToken, String refreshToken) {
+    public IssueTokenResponseDto(String accessToken, String refreshToken) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
     }
 
-    public static LoginResponseDto of(String accessToken, String refreshToken) {
-        return LoginResponseDto.builder()
+    public static IssueTokenResponseDto of(String accessToken, String refreshToken) {
+        return IssueTokenResponseDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();

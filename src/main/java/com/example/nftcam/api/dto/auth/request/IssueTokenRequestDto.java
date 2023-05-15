@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class LoginRequestDto {
+public class IssueTokenRequestDto {
     private String uuid;
 
     public User toEntity() {
