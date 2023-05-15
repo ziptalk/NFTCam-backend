@@ -2,6 +2,7 @@ package com.example.nftcam.filter.jwt;
 
 import com.example.nftcam.api.entity.user.details.UserAccountService;
 import com.example.nftcam.exception.custom.CustomException;
+import com.example.nftcam.exception.custom.ExpiredTokenException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -21,8 +22,11 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         if (authentication.getPrincipal() == null || !jwtTokenUtil.isValidToken(authentication.getPrincipal().toString())) {
-
             throw CustomException.builder().httpStatus(HttpStatus.UNAUTHORIZED).message("인증되지 않은 사용자입니다.").build();
+        }
+
+        if (!jwtTokenUtil.isExpiredToken(authentication.getPrincipal().toString())) {
+            throw ExpiredTokenException.builder().httpStatus(HttpStatus.UNAUTHORIZED).message("만료된 토큰입니다.").build();
         }
 
 
