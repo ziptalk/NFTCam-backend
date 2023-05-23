@@ -72,7 +72,6 @@ public class MaterialService {
         String coordToAddr = locationConversion.coordToAddr(materialSaveRequestDto.getLongitude(), materialSaveRequestDto.getLatitude());
 
         Material material = materialRepository.save(Material.builder()
-                .title(materialSaveRequestDto.getTitle())
                 .isMinting(false)
                 .device(materialSaveRequestDto.getDevice())
                 .address(coordToAddr)
