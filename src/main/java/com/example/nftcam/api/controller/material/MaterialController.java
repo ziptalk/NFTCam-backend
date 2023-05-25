@@ -1,5 +1,6 @@
 package com.example.nftcam.api.controller.material;
 
+import com.example.nftcam.api.dto.material.request.MaterialMintingRequestDto;
 import com.example.nftcam.api.dto.material.request.MaterialModifyRequestDto;
 import com.example.nftcam.api.dto.material.request.MaterialSaveRequestDto;
 import com.example.nftcam.api.dto.material.response.MaterialCardResponseDto;
@@ -79,8 +80,8 @@ public class MaterialController {
     }
 
     @PutMapping(value = "/mint/{materialId}")
-    public ResponseEntity<Void> mintingMaterial(@AuthenticationPrincipal UserAccount userAccount, @PathVariable Long materialId) {
-        Long updatedResourceId = materialService.mintingMaterial(userAccount, materialId);
+    public ResponseEntity<Void> mintingMaterial(@AuthenticationPrincipal UserAccount userAccount, @PathVariable Long materialId, @RequestBody MaterialMintingRequestDto materialMintingRequestDto) {
+        Long updatedResourceId = materialService.mintingMaterial(userAccount, materialId, materialMintingRequestDto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .replacePath("/api/material/{materialId}")
                 .buildAndExpand(updatedResourceId)
