@@ -1,5 +1,6 @@
 package com.example.nftcam.api.service.material;
 
+import com.example.nftcam.api.dto.material.request.MaterialMintingRequestDto;
 import com.example.nftcam.api.dto.material.request.MaterialModifyRequestDto;
 import com.example.nftcam.api.dto.material.request.MaterialSaveRequestDto;
 import com.example.nftcam.api.dto.material.response.MaterialCardResponseDto;
@@ -10,34 +11,48 @@ import com.example.nftcam.api.entity.material.MaterialRepository;
 import com.example.nftcam.api.entity.user.User;
 import com.example.nftcam.api.entity.user.UserRepository;
 import com.example.nftcam.api.entity.user.details.UserAccount;
+import com.example.nftcam.api.service.pinata.PinataService;
 import com.example.nftcam.exception.custom.CustomException;
 import com.example.nftcam.utils.AmazonS3Uploader;
 import com.example.nftcam.utils.LocationConversion;
+import com.example.nftcam.web3.NFTCAM;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MaterialService {
+    private final NFTCAM nft;
+
+    @Value("${metamask.WALLET_ADDRESS}")
+    private String WALLET_ADDRESS;
+
+    @Value("${pinata.jwt}")
+    private String PINATA_JWT;
     private final UserRepository userRepository;
     private final MaterialRepository materialRepository;
+    private final PinataService pinataService;
     private final LocationConversion locationConversion;
     private final AmazonS3Uploader amazonS3Uploader;
 
-    @Transactional(readOnly = true)
     public DataResponseDto<List<MaterialCardResponseDto>> getMaterialCardList(UserAccount userAccount, Long cursor, Pageable pageable) {
         List<MaterialCardResponseDto> materialCardResponseDtos = materialRepository.findAllByUserIdWithPaging(userAccount.getUserId(), cursor, pageable).stream()
                 .map(MaterialCardResponseDto::of)
@@ -48,7 +63,6 @@ public class MaterialService {
                 .build();
     }
 
-    @Transactional
     public DataResponseDto<MaterialDetailResponseDto> getMaterialDetail(UserAccount userAccount, Long materialId) {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 data 입니다.").build());
@@ -112,13 +126,19 @@ public class MaterialService {
         return material.getId();
     }
 
-    @Transactional
-    public Long mintingMaterial(UserAccount userAccount, Long materialId) {
+    @Transactional // 비동기 처리가 안되는 상황 해결해야함
+    public Long mintingMaterial(UserAccount userAccount, Long materialId, MaterialMintingRequestDto materialMintingRequestDto) {
         User user = userRepository.findById(userAccount.getUserId())
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
         Material material = materialRepository.findByIdAndUser_Id(materialId, user.getId())
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않거나 material 소유자가 아닙니다.").build());
-        material.updateNFTId("ON PROGRESS...");
+
+        if (material.getIsMinting()) {
+            throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("이미 minting 된 material 입니다.").build();
+        }
+
+        material.updateOnProgress(materialMintingRequestDto.getTitle(), "ON PROGRESS...");
+        mintingMaterialAsync(material, materialMintingRequestDto);
         return material.getId();
     }
 
@@ -142,4 +162,30 @@ public class MaterialService {
 
         materialRepository.delete(material);
     }
+
+    // 여기서 부터 모든 과정은 비동기로 처리해야함
+    @Async
+    @Transactional
+    public void mintingMaterialAsync(Material material, MaterialMintingRequestDto materialMintingRequestDto) {
+        // 1. material 의 url에서 File 가져오기
+        File file = amazonS3Uploader.saveS3ObjectToFile(material.getSource());
+        log.info("file : {}", file.canRead());
+        // 2. File -> IPFS 업로드 후 CID 값 받아오기
+        String fileCID = pinataService.pinFileToIPFS(materialMintingRequestDto.getTitle(), file, PINATA_JWT);
+        log.info("fileCID : {}", fileCID);
+        // 3. CID 값, 메타데이터 JSON -> IPFS 업로드 후 CID 값 받아오기
+        LocalDateTime now = LocalDateTime.now();
+        String metadataCID = pinataService.pinJsonToIPFS(material, materialMintingRequestDto.getTitle(), fileCID, now, PINATA_JWT);
+        log.info("metadataCID : {}", metadataCID);
+        // 4. 받아온 CID 값으로 MINTING 진행
+        CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(WALLET_ADDRESS, "ipfs://"+metadataCID+"/").sendAsync();
+        // 5. 민팅이 완료되면 material 의 NFT ID 값 업데이트
+        transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> {
+            log.info("transactionReceiptHash : {}", transactionReceipt.getTransactionHash());
+            log.info("blockNumber : {}", transactionReceipt.getBlockNumber());
+            log.info("status : {}", transactionReceipt.getStatus());
+            material.updateNFTId(transactionReceipt.getTransactionHash()+String.valueOf(transactionReceipt.getBlockNumber()));
+        });
+    }
+
 }
