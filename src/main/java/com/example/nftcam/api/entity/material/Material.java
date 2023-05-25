@@ -18,7 +18,7 @@ public class Material {
     @Column(name = "material_id", nullable = false)
     private Long id;
 
-    @Column(name = "material_title", nullable = false)
+    @Column(name = "material_title")
     private String title;
 
     @Column(name = "material_source")
@@ -62,9 +62,8 @@ public class Material {
         this.user = user;
     }
 
-    public static Material of(String title, String source, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
+    public static Material toEntity(String source, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
         return Material.builder()
-                .title(title)
                 .source(source)
                 .isMinting(isMinting)
                 .device(device)

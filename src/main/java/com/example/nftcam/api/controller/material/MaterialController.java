@@ -4,6 +4,7 @@ import com.example.nftcam.api.dto.material.request.MaterialModifyRequestDto;
 import com.example.nftcam.api.dto.material.request.MaterialSaveRequestDto;
 import com.example.nftcam.api.dto.material.response.MaterialCardResponseDto;
 import com.example.nftcam.api.dto.material.response.MaterialDetailResponseDto;
+import com.example.nftcam.api.dto.material.response.MaterialMadeResponseDto;
 import com.example.nftcam.api.dto.util.DataResponseDto;
 import com.example.nftcam.api.entity.user.details.UserAccount;
 import com.example.nftcam.api.service.material.MaterialService;
@@ -40,14 +41,14 @@ public class MaterialController {
     }
 
     @PostMapping(value = "/save/content")
-    public ResponseEntity<Void> createMaterial(@AuthenticationPrincipal UserAccount userAccount,
-                                            @RequestBody MaterialSaveRequestDto materialSaveRequestDto) {
+    public ResponseEntity<MaterialMadeResponseDto> createMaterial(@AuthenticationPrincipal UserAccount userAccount,
+                                                                  @RequestBody MaterialSaveRequestDto materialSaveRequestDto) {
         Long material = materialService.createMaterial(userAccount, materialSaveRequestDto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .replacePath("/api/material/save/image/{materialId}")
                 .buildAndExpand(material)
                 .toUri();
-        return ResponseEntity.created(location).build();
+        return ResponseEntity.created(location).body(MaterialMadeResponseDto.builder().materialId(material).build());
     }
 
 

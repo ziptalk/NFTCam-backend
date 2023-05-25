@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MaterialSaveRequestDto {
-    private String title;
     private String device;
     private String takenAt;
     private String latitude;
