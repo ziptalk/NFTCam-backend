@@ -32,12 +32,7 @@ import java.util.List;
 public class MaterialController {
     private final MaterialService materialService;
 
-//    @GetMapping(value = "/test")
-//    public void test() {
-//        materialService.test();
-//    }
-
-    @GetMapping(value = "/save/image")
+    @PostMapping(value = "/save/image")
     public ResponseEntity<MaterialImageSaveResponseDto> updateMaterialImage(@AuthenticationPrincipal UserAccount userAccount, @RequestBody MultipartFile image) {
         MaterialImageSaveResponseDto materialImageSaveResponseDto = materialService.saveMaterialImage(userAccount, image);
         return ResponseEntity.ok().body(materialImageSaveResponseDto);
