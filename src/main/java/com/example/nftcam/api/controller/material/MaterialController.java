@@ -5,6 +5,7 @@ import com.example.nftcam.api.dto.material.request.MaterialModifyRequestDto;
 import com.example.nftcam.api.dto.material.request.MaterialSaveRequestDto;
 import com.example.nftcam.api.dto.material.response.MaterialCardResponseDto;
 import com.example.nftcam.api.dto.material.response.MaterialDetailResponseDto;
+import com.example.nftcam.api.dto.material.response.MaterialImageSaveResponseDto;
 import com.example.nftcam.api.dto.material.response.MaterialMadeResponseDto;
 import com.example.nftcam.api.dto.util.DataResponseDto;
 import com.example.nftcam.api.entity.user.details.UserAccount;
@@ -31,14 +32,15 @@ import java.util.List;
 public class MaterialController {
     private final MaterialService materialService;
 
-    @PostMapping(value = "/save/image/{materialId}")
-    public ResponseEntity<Void> updateMaterialImage(@AuthenticationPrincipal UserAccount userAccount, @RequestPart MultipartFile image, @PathVariable Long materialId) {
-        Long newResourceId = materialService.updateImageToMaterial(userAccount, image, materialId);
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .replacePath("/api/material/{materialId}")
-                .buildAndExpand(newResourceId)
-                .toUri();
-        return ResponseEntity.created(location).build();
+//    @GetMapping(value = "/test")
+//    public void test() {
+//        materialService.test();
+//    }
+
+    @GetMapping(value = "/save/image")
+    public ResponseEntity<MaterialImageSaveResponseDto> updateMaterialImage(@AuthenticationPrincipal UserAccount userAccount, @RequestBody MultipartFile image) {
+        MaterialImageSaveResponseDto materialImageSaveResponseDto = materialService.saveMaterialImage(userAccount, image);
+        return ResponseEntity.ok().body(materialImageSaveResponseDto);
     }
 
     @PostMapping(value = "/save/content")
