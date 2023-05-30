@@ -31,8 +31,13 @@ import java.util.List;
 public class MaterialController {
     private final MaterialService materialService;
 
+//    @GetMapping(value = "/test")
+//    public void test() {
+//        materialService.test();
+//    }
+
     @PostMapping(value = "/save/image/{materialId}")
-    public ResponseEntity<Void> updateMaterialImage(@AuthenticationPrincipal UserAccount userAccount, @RequestPart MultipartFile image, @PathVariable Long materialId) {
+    public ResponseEntity<Void> updateMaterialImage(@AuthenticationPrincipal UserAccount userAccount, @RequestParam MultipartFile image, @PathVariable Long materialId) {
         Long newResourceId = materialService.updateImageToMaterial(userAccount, image, materialId);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .replacePath("/api/material/{materialId}")
