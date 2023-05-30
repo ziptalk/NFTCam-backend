@@ -73,6 +73,13 @@ public class Material {
                 .build();
     }
 
+    public void updateOnProgress(String title, String nftId) {
+        this.title = title;
+        this.nftId = nftId;
+        this.isMinting = true;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void updateNFTId(String nftId) {
         this.nftId = nftId;
         this.isMinting = true;
