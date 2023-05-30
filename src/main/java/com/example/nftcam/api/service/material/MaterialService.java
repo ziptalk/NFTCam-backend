@@ -5,6 +5,7 @@ import com.example.nftcam.api.dto.material.request.MaterialModifyRequestDto;
 import com.example.nftcam.api.dto.material.request.MaterialSaveRequestDto;
 import com.example.nftcam.api.dto.material.response.MaterialCardResponseDto;
 import com.example.nftcam.api.dto.material.response.MaterialDetailResponseDto;
+import com.example.nftcam.api.dto.material.response.MaterialImageSaveResponseDto;
 import com.example.nftcam.api.dto.util.DataResponseDto;
 import com.example.nftcam.api.entity.material.Material;
 import com.example.nftcam.api.entity.material.MaterialRepository;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
@@ -87,6 +89,7 @@ public class MaterialService {
 
         Material material = materialRepository.save(Material.builder()
                 .isMinting(false)
+                .source(materialSaveRequestDto.getImageUrl())
                 .device(materialSaveRequestDto.getDevice())
                 .address(coordToAddr)
                 .takenAt(LocalDateTime.parse(materialSaveRequestDto.getTakenAt(), formatter))
@@ -96,8 +99,7 @@ public class MaterialService {
         return material.getId();
     }
 
-    @Transactional
-    public Long updateImageToMaterial(UserAccount userAccount, MultipartFile image, Long materialId){
+    public MaterialImageSaveResponseDto saveMaterialImage(UserAccount userAccount, MultipartFile image){
         String imageUrl = null;
         User user = userRepository.findById(userAccount.getUserId())
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
@@ -109,11 +111,10 @@ public class MaterialService {
             throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("이미지 업로드에 실패했습니다.").build();
         }
 
-        Material material = materialRepository.findByIdAndUser_Id(materialId, user.getId())
-                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않거나 material 소유자가 아닙니다.").build());
-
-        material.updateImageUrl(imageUrl);
-        return material.getId();
+        MaterialImageSaveResponseDto materialImageSaveResponseDto = MaterialImageSaveResponseDto.builder()
+                .imageUrl(imageUrl)
+                .build();
+        return materialImageSaveResponseDto;
     }
 
     @Transactional
@@ -163,13 +164,13 @@ public class MaterialService {
         materialRepository.delete(material);
     }
 
-    // 여기서 부터 모든 과정은 비동기로 처리해야함
+    // 여기서 부터 모든 과정은 비동기로 처리해야함 -> 제대로 안되고 있음...
     @Async
-    @Transactional
+//    @Transactional
     public void mintingMaterialAsync(Material material, MaterialMintingRequestDto materialMintingRequestDto) {
         // 1. material 의 url에서 File 가져오기
         File file = amazonS3Uploader.saveS3ObjectToFile(material.getSource());
-        log.info("file : {}", file.canRead());
+        log.info("file : {}", file.toString());
         // 2. File -> IPFS 업로드 후 CID 값 받아오기
         String fileCID = pinataService.pinFileToIPFS(materialMintingRequestDto.getTitle(), file, PINATA_JWT);
         log.info("fileCID : {}", fileCID);
@@ -180,12 +181,17 @@ public class MaterialService {
         // 4. 받아온 CID 값으로 MINTING 진행
         CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(WALLET_ADDRESS, "ipfs://"+metadataCID+"/").sendAsync();
         // 5. 민팅이 완료되면 material 의 NFT ID 값 업데이트
-        transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> {
-            log.info("transactionReceiptHash : {}", transactionReceipt.getTransactionHash());
-            log.info("blockNumber : {}", transactionReceipt.getBlockNumber());
-            log.info("status : {}", transactionReceipt.getStatus());
-            material.updateNFTId(transactionReceipt.getTransactionHash()+String.valueOf(transactionReceipt.getBlockNumber()));
-        });
+        transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> updateMaterialNFTId(transactionReceipt, material.getId()));
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateMaterialNFTId(TransactionReceipt transactionReceipt, Long materialId) {
+        Material material = materialRepository.findById(materialId)
+                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 material 입니다.").build());
+        log.info("transactionReceiptHash : {}", transactionReceipt.getTransactionHash());
+        log.info("blockNumber : {}", transactionReceipt.getBlockNumber());
+        log.info("status : {}", transactionReceipt.getStatus());
+//        material.updateNFTId(transactionReceipt.getTransactionHash() + String.valueOf(transactionReceipt.getBlockNumber()));
+        materialRepository.updateMaterialNftId( transactionReceipt.getTransactionHash() + String.valueOf(transactionReceipt.getBlockNumber()), material.getId());
+    }
 }
