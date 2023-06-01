@@ -84,13 +84,12 @@ public class Web3jService {
     @Async
     public void nftCreate() throws Exception {
         log.info("start time : " + String.valueOf(LocalDateTime.now()));
-        CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(WALLET_ADDRESS, "").sendAsync();
+        CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(WALLET_ADDRESS, "ipfs://_/").sendAsync();
         transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> {
             log.info("transactionReceiptHash : {}", transactionReceipt.getTransactionHash());
             log.info("status : {}", transactionReceipt.getStatus());
         });
         log.info("end time : " + String.valueOf(LocalDateTime.now()));
-//        return futureReceipt;
     }
 
     // nft 거래가 발생할 경우 subscribe에 등록한 함수가 실행됨
