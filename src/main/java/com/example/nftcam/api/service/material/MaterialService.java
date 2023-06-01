@@ -9,6 +9,7 @@ import com.example.nftcam.api.dto.material.response.MaterialImageSaveResponseDto
 import com.example.nftcam.api.dto.util.DataResponseDto;
 import com.example.nftcam.api.entity.material.Material;
 import com.example.nftcam.api.entity.material.MaterialRepository;
+import com.example.nftcam.api.entity.material.MintState;
 import com.example.nftcam.api.entity.user.User;
 import com.example.nftcam.api.entity.user.UserRepository;
 import com.example.nftcam.api.entity.user.details.UserAccount;
@@ -20,7 +21,6 @@ import com.example.nftcam.web3.NFTCAM;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
@@ -51,7 +51,6 @@ public class MaterialService {
     private String PINATA_JWT;
     private final UserRepository userRepository;
     private final MaterialRepository materialRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final MaterialAsyncService materialAsyncService;
     private final PinataService pinataService;
     private final LocationConversion locationConversion;
@@ -90,7 +89,7 @@ public class MaterialService {
         String coordToAddr = locationConversion.coordToAddr(materialSaveRequestDto.getLongitude(), materialSaveRequestDto.getLatitude());
 
         Material material = materialRepository.save(Material.builder()
-                .isMinting(false)
+                .isMinting(MintState.NONE)
                 .source(materialSaveRequestDto.getImageUrl())
                 .device(materialSaveRequestDto.getDevice())
                 .address(coordToAddr)
@@ -136,7 +135,7 @@ public class MaterialService {
         Material material = materialRepository.findByIdAndUser_Id(materialId, user.getId())
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않거나 material 소유자가 아닙니다.").build());
 
-        if (material.getIsMinting()) {
+        if (material.getIsMinting().equals(MintState.MINTING) || material.getIsMinting().equals(MintState.MINTED)) {
             throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("이미 minting 된 material 입니다.").build();
         }
 
