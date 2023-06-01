@@ -28,7 +28,8 @@ public class Material {
     private String nftId;
 
     @Column(name = "is_minting", nullable = false)
-    private Boolean isMinting;
+    @Enumerated(EnumType.STRING)
+    private MintState isMinting;
 
     @Column(name = "material_taken_device", nullable = false)
     private String device;
@@ -50,7 +51,7 @@ public class Material {
     private User user;
 
     @Builder
-    public Material(String title, String source, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
+    public Material(String title, String source, MintState isMinting, String device, String address, LocalDateTime takenAt, User user) {
         this.title = title;
         this.source = source;
         this.isMinting = isMinting;
@@ -62,7 +63,7 @@ public class Material {
         this.user = user;
     }
 
-    public static Material toEntity(String source, Boolean isMinting, String device, String address, LocalDateTime takenAt, User user) {
+    public static Material toEntity(String source, MintState isMinting, String device, String address, LocalDateTime takenAt, User user) {
         return Material.builder()
                 .source(source)
                 .isMinting(isMinting)
@@ -76,13 +77,7 @@ public class Material {
     public void updateOnProgress(String title, String nftId) {
         this.title = title;
         this.nftId = nftId;
-        this.isMinting = true;
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public void updateNFTId(String nftId) {
-        this.nftId = nftId;
-        this.isMinting = true;
+        this.isMinting = MintState.MINTING;
         this.updatedAt = LocalDateTime.now();
     }
 

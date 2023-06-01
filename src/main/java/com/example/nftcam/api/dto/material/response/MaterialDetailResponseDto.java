@@ -1,6 +1,7 @@
 package com.example.nftcam.api.dto.material.response;
 
 import com.example.nftcam.api.entity.material.Material;
+import com.example.nftcam.api.entity.material.MintState;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,13 +17,13 @@ private Long materialId;
     private String title;
     private String source;
     private String nftId;
-    private Boolean isMinting;
+    private MintState isMinting;
     private String device;
     private String address;
     private String date;
 
     @Builder
-    public MaterialDetailResponseDto(Long materialId, String title, String source, String nftId, Boolean isMinting, String device, String address, String date) {
+    public MaterialDetailResponseDto(Long materialId, String title, String source, String nftId, MintState isMinting, String device, String address, String date) {
         this.materialId = materialId;
         this.title = title;
         this.source = source;
