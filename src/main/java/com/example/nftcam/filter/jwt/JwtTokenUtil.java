@@ -23,9 +23,11 @@ public class JwtTokenUtil {
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER_PREFIX = "Bearer ";
 
-    private static final int ACCESS_TOKEN_EXPIRATION_MS = 24 * 60 * 60 * 1000;
+//    private static final int ACCESS_TOKEN_EXPIRATION_MS = 24 * 60 * 60 * 1000;
+    private static final int ACCESS_TOKEN_EXPIRATION_MS = 60 * 1000;
 
-    private static final int REFRESH_TOKEN_EXPIRATION_MS = 14 * 24 * 60 * 60 * 1000;
+//    private static final int REFRESH_TOKEN_EXPIRATION_MS = 14 * 24 * 60 * 60 * 1000;
+    private static final int REFRESH_TOKEN_EXPIRATION_MS = 3 * 60 * 1000;
 
     // jwt 토큰 생성
     public String generateAccessToken(long userId, Role role, String uuid, boolean isActive) {
