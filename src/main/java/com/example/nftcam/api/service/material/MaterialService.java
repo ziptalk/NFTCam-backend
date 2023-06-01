@@ -20,16 +20,16 @@ import com.example.nftcam.web3.NFTCAM;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import reactor.core.publisher.Mono;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.time.LocalDateTime;
@@ -51,6 +51,8 @@ public class MaterialService {
     private String PINATA_JWT;
     private final UserRepository userRepository;
     private final MaterialRepository materialRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final MaterialAsyncService materialAsyncService;
     private final PinataService pinataService;
     private final LocationConversion locationConversion;
     private final AmazonS3Uploader amazonS3Uploader;
@@ -139,7 +141,9 @@ public class MaterialService {
         }
 
         material.updateOnProgress(materialMintingRequestDto.getTitle(), "ON PROGRESS...");
+
         mintingMaterialAsync(material, materialMintingRequestDto);
+
         return material.getId();
     }
 
@@ -164,34 +168,26 @@ public class MaterialService {
         materialRepository.delete(material);
     }
 
-    // 여기서 부터 모든 과정은 비동기로 처리해야함 -> 제대로 안되고 있음...
+
     @Async
-//    @Transactional
     public void mintingMaterialAsync(Material material, MaterialMintingRequestDto materialMintingRequestDto) {
-        // 1. material 의 url에서 File 가져오기
-        File file = amazonS3Uploader.saveS3ObjectToFile(material.getSource());
-        log.info("file : {}", file.toString());
-        // 2. File -> IPFS 업로드 후 CID 값 받아오기
-        String fileCID = pinataService.pinFileToIPFS(materialMintingRequestDto.getTitle(), file, PINATA_JWT);
-        log.info("fileCID : {}", fileCID);
-        // 3. CID 값, 메타데이터 JSON -> IPFS 업로드 후 CID 값 받아오기
+        // CID 값, 메타데이터 JSON -> IPFS 업로드 후 CID 값 받아오기
         LocalDateTime now = LocalDateTime.now();
-        String metadataCID = pinataService.pinJsonToIPFS(material, materialMintingRequestDto.getTitle(), fileCID, now, PINATA_JWT);
-        log.info("metadataCID : {}", metadataCID);
-        // 4. 받아온 CID 값으로 MINTING 진행
-        CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(WALLET_ADDRESS, "ipfs://"+metadataCID+"/").sendAsync();
-        // 5. 민팅이 완료되면 material 의 NFT ID 값 업데이트
-        transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> updateMaterialNFTId(transactionReceipt, material.getId()));
+        Mono<String> metadataCID = pinataService.pinJsonToIPFS(material, materialMintingRequestDto.getTitle(), material.getSource(), now, PINATA_JWT);
+        metadataCID.subscribe(cid -> {
+            log.info("metadataCID : {}", cid);
+            // 받아온 CID 값으로 MINTING 진행
+            CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(WALLET_ADDRESS, "ipfs://" + cid + "/").sendAsync();
+            transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> {
+                materialAsyncService.publishEvent(material.getId(), transactionReceipt.getTransactionHash());
+            }).exceptionally(ex -> {
+                log.error("Error during minting NFT: {}", ex.getMessage());
+                throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("NFT minting에 실패했습니다. : " + ex.getMessage()).build();
+            });
+        }, error -> {
+            log.error("Error during pinning JSON to IPFS: {}", error.getMessage());
+            throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("IPFS 업로드를 실패했습니다. : " + error).build();
+        });
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void updateMaterialNFTId(TransactionReceipt transactionReceipt, Long materialId) {
-        Material material = materialRepository.findById(materialId)
-                .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 material 입니다.").build());
-        log.info("transactionReceiptHash : {}", transactionReceipt.getTransactionHash());
-        log.info("blockNumber : {}", transactionReceipt.getBlockNumber());
-        log.info("status : {}", transactionReceipt.getStatus());
-//        material.updateNFTId(transactionReceipt.getTransactionHash() + String.valueOf(transactionReceipt.getBlockNumber()));
-        materialRepository.updateMaterialNftId( transactionReceipt.getTransactionHash() + String.valueOf(transactionReceipt.getBlockNumber()), material.getId());
-    }
 }
