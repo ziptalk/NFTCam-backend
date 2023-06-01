@@ -15,11 +15,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,14 +30,13 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class PinataService {
+
     public String pinFileToIPFS(String title, File file, String jwt) {
-//        File file = convertMultipartFileToFile(image);
         WebClient webClient = WebClient.builder().baseUrl("https://api.pinata.cloud").build();
 
         MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
-        bodyBuilder.part("file", new FileSystemResource(file));
-        bodyBuilder.part("pinataMetadata", String.format("{\"name\": \"%s\", \"keyvalues\": {\"company\": \"BWL\"}}", title));
-
+        bodyBuilder.part("file", new FileSystemResource(file), MediaType.APPLICATION_OCTET_STREAM);
+        bodyBuilder.part("pinataMetadata", String.format("{\"name\": \"%s\"}", title));
         MultiValueMap<String, HttpEntity<?>> multipartBody = bodyBuilder.build();
 
         IPFSResponseDto response = webClient.post()
@@ -43,13 +44,21 @@ public class PinataService {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .bodyValue(multipartBody)
+                .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .bodyToMono(IPFSResponseDto.class).block();
+                .bodyToMono(IPFSResponseDto.class)
+                .timeout(Duration.ofMinutes(5L))
+                .blockOptional().orElseThrow(
+                        () -> CustomException.builder()
+                                .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .message("Pinata pinFileToIPFS error")
+                                .build()
+                );
 
         return response.getIpfsHash();
     }
 
-    public String pinJsonToIPFS(Material material, String title, String fileCID, LocalDateTime now, String jwt) {
+    public Mono<String> pinJsonToIPFS(Material material, String title, String imageUrl, LocalDateTime now, String jwt) {
         WebClient webClient = WebClient.create("https://api.pinata.cloud");
 
         Map<String, Object> pinataMetadata = new HashMap<>();
@@ -58,7 +67,7 @@ public class PinataService {
         Map<String, String> pinataContent = new HashMap<>();
         pinataContent.put("name", title);
         pinataContent.put("description", title+"-description");
-        pinataContent.put("image", "ipfs://"+fileCID);
+        pinataContent.put("image", imageUrl);
         pinataContent.put("time", String.valueOf(now));
         pinataContent.put("device", material.getDevice());
         pinataContent.put("location", material.getAddress());
@@ -67,14 +76,14 @@ public class PinataService {
         body.put("pinataMetadata", pinataMetadata);
         body.put("pinataContent", pinataContent);
 
-        IPFSResponseDto response = webClient.post()
+        return webClient.post()
                 .uri("/pinning/pinJSONToIPFS")
                 .header("Authorization", "Bearer " + jwt)
                 .bodyValue(body)
                 .retrieve()
-                .bodyToMono(IPFSResponseDto.class).block();
-
-        return response.getIpfsHash();
+                .bodyToMono(IPFSResponseDto.class)
+                .timeout(Duration.ofMinutes(5L))
+                .map(IPFSResponseDto::getIpfsHash);
     }
 
     public File convertMultipartFileToFile(MultipartFile multipartFile) throws IOException {

@@ -77,13 +77,13 @@ public class MaterialController {
     }
 
     @PutMapping(value = "/mint/{materialId}")
-    public ResponseEntity<Void> mintingMaterial(@AuthenticationPrincipal UserAccount userAccount, @PathVariable Long materialId, @RequestBody MaterialMintingRequestDto materialMintingRequestDto) {
+    public ResponseEntity<MaterialMadeResponseDto> mintingMaterial(@AuthenticationPrincipal UserAccount userAccount, @PathVariable Long materialId, @RequestBody MaterialMintingRequestDto materialMintingRequestDto) {
         Long updatedResourceId = materialService.mintingMaterial(userAccount, materialId, materialMintingRequestDto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .replacePath("/api/material/{materialId}")
                 .buildAndExpand(updatedResourceId)
                 .toUri();
-        return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).body(MaterialMadeResponseDto.builder().materialId(materialId).build());
     }
 
     @DeleteMapping(value = "/{materialId}")

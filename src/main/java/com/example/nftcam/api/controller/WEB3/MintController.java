@@ -20,7 +20,6 @@ public class MintController {
     @GetMapping("/mint")
     public ResponseEntity<?> minting(@AuthenticationPrincipal UserAccount userAccount) throws Exception {
         web3jService.getContractName();
-        web3jService.nftCreate();
         return ResponseEntity.ok().body("Minting Success");
     }
 
