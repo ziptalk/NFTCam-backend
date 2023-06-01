@@ -30,8 +30,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import reactor.core.publisher.Mono;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -44,6 +44,8 @@ import java.util.stream.Collectors;
 public class MaterialService {
     private final NFTCAM nft;
 
+    @Value("${metamask.CONTRACT_ADDRESS}")
+    private String CONTRACT_ADDRESS;
     @Value("${metamask.WALLET_ADDRESS}")
     private String WALLET_ADDRESS;
 
@@ -157,12 +159,16 @@ public class MaterialService {
         int lastIndex = material.getSource().lastIndexOf('/')+1;
         String fileName = material.getSource().substring(lastIndex);
         String decodedFileName = null;
-        try {
-            decodedFileName = URLDecoder.decode(fileName, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("파일 이름 디코딩에 실패했습니다.").build();
-        }
+        decodedFileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
         amazonS3Uploader.deleteFile(decodedFileName);
+
+        // NFT ID에서 Token Id 가져오는 정규식
+//        Pattern pattern = Pattern.compile("\\[(.*?)\\]");
+//        Matcher matcher = pattern.matcher(text);
+//        if (matcher.find()) {
+//            String tokenId = matcher.group(1);
+//            log.info("tokenId : {}", tokenId);
+//        }
 
         materialRepository.delete(material);
     }
@@ -178,7 +184,10 @@ public class MaterialService {
             // 받아온 CID 값으로 MINTING 진행
             CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(WALLET_ADDRESS, "ipfs://" + cid + "/").sendAsync();
             transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> {
-                materialAsyncService.publishEvent(material.getId(), transactionReceipt.getTransactionHash());
+                // Fetch the mint events from the transaction receipt
+                List<NFTCAM.MintEventResponse> responses = NFTCAM.getMintEvents(transactionReceipt);
+                long tokenId = responses.get(0).param0.longValue();
+                materialAsyncService.publishEvent(material.getId(), CONTRACT_ADDRESS + " [" + tokenId + "]");
             }).exceptionally(ex -> {
                 log.error("Error during minting NFT: {}", ex.getMessage());
                 throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("NFT minting에 실패했습니다. : " + ex.getMessage()).build();
