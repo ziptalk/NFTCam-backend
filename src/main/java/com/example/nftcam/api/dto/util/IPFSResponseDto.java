@@ -1,14 +1,18 @@
 package com.example.nftcam.api.dto.util;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Getter
+@Data
 @NoArgsConstructor
 public class IPFSResponseDto {
+    @JsonProperty("IpfsHash")
     private String IpfsHash;
+    @JsonProperty("PinSize")
     private long PinSize;
+    @JsonProperty("Timestamp")
     private String Timestamp;
 
     @Builder
