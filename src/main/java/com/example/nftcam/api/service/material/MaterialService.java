@@ -182,7 +182,7 @@ public class MaterialService {
         metadataCID.subscribe(cid -> {
             log.info("metadataCID : {}", cid);
             // 받아온 CID 값으로 MINTING 진행
-            CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(WALLET_ADDRESS, "ipfs://" + cid + "/").sendAsync();
+            CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(materialMintingRequestDto.getWalletAddress(), "ipfs://" + cid + "/").sendAsync();
             transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> {
                 // Fetch the mint events from the transaction receipt
                 List<NFTCAM.MintEventResponse> responses = NFTCAM.getMintEvents(transactionReceipt);
