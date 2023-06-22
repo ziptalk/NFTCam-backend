@@ -2,6 +2,7 @@ package com.example.nftcam.api.entity.user;
 
 import com.example.nftcam.api.entity.material.Material;
 import com.example.nftcam.api.entity.token.UserToken;
+import com.example.nftcam.api.entity.wallet.Wallet;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,6 +43,9 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Material> materials;
+
+    @OneToMany(mappedBy = "user")
+    private List<Wallet> wallets;
 
     @Builder
     public User(String uuid, Role role) {
