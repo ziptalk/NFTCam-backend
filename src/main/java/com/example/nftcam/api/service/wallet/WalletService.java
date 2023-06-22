@@ -32,6 +32,9 @@ public class WalletService {
 
     @Transactional
     public WalletInfoResponseDto createWalletInfo(UserAccount userAccount, WalletInfoCreateRequestDto walletInfoCreateRequestDto){
+        if (walletRepository.existsByWalletAddressAndUser_Id(walletInfoCreateRequestDto.getWalletAddress(), userAccount.getUserId())) {
+            throw CustomException.builder().httpStatus(HttpStatus.CONFLICT).message("이미 존재하는 지갑 주소입니다.").build();
+        }
         Wallet wallet = walletRepository.save(Wallet.builder()
                 .user(userRepository.findById(userAccount.getUserId()).orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.NOT_FOUND).message("존재하지 않는 유저입니다.").build()))
                 .walletName(walletInfoCreateRequestDto.getWalletName())
@@ -42,6 +45,9 @@ public class WalletService {
 
     @Transactional
     public WalletInfoResponseDto updateMyWalletInfo(UserAccount userAccount, WalletInfoUpdateRequestDto walletInfoUpdateRequestDto, Long walletId) {
+        if (walletRepository.existsByWalletAddressAndUser_Id(walletInfoUpdateRequestDto.getWalletAddress(), userAccount.getUserId())) {
+            throw CustomException.builder().httpStatus(HttpStatus.CONFLICT).message("이미 존재하는 지갑 주소입니다.").build();
+        }
         Wallet wallet = walletRepository.findByIdAndUser_Id(walletId, userAccount.getUserId()).orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.NOT_FOUND).message("존재하지 않는 정보 혹은 소유자가 아닙니다.").build());
         wallet.updateWalletInfo(walletInfoUpdateRequestDto.getWalletName(), walletInfoUpdateRequestDto.getWalletAddress());
         return WalletInfoResponseDto.of(wallet.getId(), wallet.getWalletName(), wallet.getWalletAddress());
