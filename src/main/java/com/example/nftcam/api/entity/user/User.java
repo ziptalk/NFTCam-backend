@@ -25,6 +25,9 @@ public class User {
     @Column(name = "user_uuid", nullable = false, unique = true)
     private String uuid;
 
+    @Column(name = "user_point")
+    private Long point;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -52,6 +55,7 @@ public class User {
         this.uuid = uuid;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.point = 0L;
         this.role = role;
         this.isActive = true;
     }
