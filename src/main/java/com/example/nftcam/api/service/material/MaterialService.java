@@ -140,6 +140,9 @@ public class MaterialService {
         if (material.getIsMinting().equals(MintState.MINTING) || material.getIsMinting().equals(MintState.MINTED)) {
             throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("이미 minting 된 material 입니다.").build();
         }
+        if (user.getPoint() < 200) {
+            throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("포인트가 부족합니다.").build();
+        }
 
         material.updateOnProgress(materialMintingRequestDto.getTitle(), "ON PROGRESS...");
 
