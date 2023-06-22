@@ -2,6 +2,7 @@ package com.example.nftcam.api.entity.user;
 
 import com.example.nftcam.api.entity.material.Material;
 import com.example.nftcam.api.entity.token.UserToken;
+import com.example.nftcam.api.entity.wallet.Wallet;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,6 +25,9 @@ public class User {
     @Column(name = "user_uuid", nullable = false, unique = true)
     private String uuid;
 
+    @Column(name = "user_point")
+    private Long point;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -43,11 +47,15 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<Material> materials;
 
+    @OneToMany(mappedBy = "user")
+    private List<Wallet> wallets;
+
     @Builder
     public User(String uuid, Role role) {
         this.uuid = uuid;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.point = 0L;
         this.role = role;
         this.isActive = true;
     }

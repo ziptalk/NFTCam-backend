@@ -140,6 +140,9 @@ public class MaterialService {
         if (material.getIsMinting().equals(MintState.MINTING) || material.getIsMinting().equals(MintState.MINTED)) {
             throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("이미 minting 된 material 입니다.").build();
         }
+        if (user.getPoint() < 200) {
+            throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("포인트가 부족합니다.").build();
+        }
 
         material.updateOnProgress(materialMintingRequestDto.getTitle(), "ON PROGRESS...");
 
@@ -182,7 +185,7 @@ public class MaterialService {
         metadataCID.subscribe(cid -> {
             log.info("metadataCID : {}", cid);
             // 받아온 CID 값으로 MINTING 진행
-            CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(WALLET_ADDRESS, "ipfs://" + cid + "/").sendAsync();
+            CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(materialMintingRequestDto.getWalletAddress(), "ipfs://" + cid + "/").sendAsync();
             transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> {
                 // Fetch the mint events from the transaction receipt
                 List<NFTCAM.MintEventResponse> responses = NFTCAM.getMintEvents(transactionReceipt);
