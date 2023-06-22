@@ -14,6 +14,7 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
     // Read
     List<Wallet> findAllByUser_IdOrderByUpdatedAtDesc(Long userId);
+    boolean existsByWalletAddressAndUser_Id(String walletAddress, Long userId);
 
     // Update
     @Modifying(clearAutomatically = true)
