@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RequestMapping("/api/wallet")
@@ -21,13 +22,14 @@ public class WalletController {
     private final WalletService walletService;
 
     @GetMapping
-    public ResponseEntity<List<WalletInfoResponseDto>> getMyWalletInfoList
+    public ResponseEntity<Map<String, List<WalletInfoResponseDto>>> getMyWalletInfoList
             (
                     @AuthenticationPrincipal UserAccount userAccount
             )
     {
         List<WalletInfoResponseDto> myWalletInfoList = walletService.getMyWalletInfoList(userAccount);
-        return ResponseEntity.ok().body(myWalletInfoList);
+        Map<String, List<WalletInfoResponseDto>> response = Map.of("data", myWalletInfoList);
+        return ResponseEntity.ok().body(response);
     }
 
     @PostMapping
