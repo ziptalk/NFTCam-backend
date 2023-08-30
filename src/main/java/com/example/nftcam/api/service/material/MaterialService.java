@@ -13,6 +13,7 @@ import com.example.nftcam.api.entity.material.MintState;
 import com.example.nftcam.api.entity.user.User;
 import com.example.nftcam.api.entity.user.UserRepository;
 import com.example.nftcam.api.entity.user.details.UserAccount;
+import com.example.nftcam.api.service.WEB3.ContractService;
 import com.example.nftcam.api.service.pinata.PinataService;
 import com.example.nftcam.exception.custom.CustomException;
 import com.example.nftcam.utils.AmazonS3Uploader;
@@ -42,10 +43,14 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class MaterialService {
-    private final NFTCAM nft;
+//    private final NFTCAM nft;
 
-    @Value("${metamask.CONTRACT_ADDRESS}")
-    private String CONTRACT_ADDRESS;
+    @Value("${metamask.S_CONTRACT_ADDRESS}")
+    private String S_CONTRACT_ADDRESS;
+
+    @Value("${metamask.M_CONTRACT_ADDRESS}")
+    private String M_CONTRACT_ADDRESS;
+
     @Value("${metamask.WALLET_ADDRESS}")
     private String WALLET_ADDRESS;
 
@@ -57,6 +62,7 @@ public class MaterialService {
     private final PinataService pinataService;
     private final LocationConversion locationConversion;
     private final AmazonS3Uploader amazonS3Uploader;
+    private final ContractService contractService;
 
     public DataResponseDto<List<MaterialCardResponseDto>> getMaterialCardList(UserAccount userAccount, Long cursor, Pageable pageable) {
         List<MaterialCardResponseDto> materialCardResponseDtos = materialRepository.findAllByUserIdWithPaging(userAccount.getUserId(), cursor, pageable).stream()
@@ -185,12 +191,22 @@ public class MaterialService {
         metadataCID.subscribe(cid -> {
             log.info("metadataCID : {}", cid);
             // 받아온 CID 값으로 MINTING 진행
-            CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nft.mintNFT(materialMintingRequestDto.getWalletAddress(), "ipfs://" + cid + "/").sendAsync();
+            NFTCAM nftcam = null;
+            String contractAddress = null;
+            if (materialMintingRequestDto.getNetwork().equalsIgnoreCase("MUMBAI")) {
+                nftcam = contractService.multichainNft(80001);
+                contractAddress = M_CONTRACT_ADDRESS;
+            } else {
+                nftcam = contractService.multichainNft(11155111);
+                contractAddress = S_CONTRACT_ADDRESS;
+            }
+            CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nftcam.mintNFT(materialMintingRequestDto.getWalletAddress(), "ipfs://" + cid + "/").sendAsync();
+            String finalContractAddress = contractAddress;
             transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> {
                 // Fetch the mint events from the transaction receipt
                 List<NFTCAM.MintEventResponse> responses = NFTCAM.getMintEvents(transactionReceipt);
                 long tokenId = responses.get(0).param0.longValue();
-                materialAsyncService.publishEvent(material.getId(), CONTRACT_ADDRESS + " [" + tokenId + "]");
+                materialAsyncService.publishEvent(material.getId(),   finalContractAddress + " [" + tokenId + "]");
             }).exceptionally(ex -> {
                 log.error("Error during minting NFT: {}", ex.getMessage());
                 throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("NFT minting에 실패했습니다. : " + ex.getMessage()).build();
