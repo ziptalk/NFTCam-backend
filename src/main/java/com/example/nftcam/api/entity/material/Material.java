@@ -31,6 +31,10 @@ public class Material {
     @Enumerated(EnumType.STRING)
     private MintState isMinting;
 
+    @Column(name = "chain_type")
+    @Enumerated(EnumType.STRING)
+    private ChainType chainType;
+
     @Column(name = "material_taken_device", nullable = false)
     private String device;
 
@@ -51,10 +55,11 @@ public class Material {
     private User user;
 
     @Builder
-    public Material(String title, String source, MintState isMinting, String device, String address, LocalDateTime takenAt, User user) {
+    public Material(String title, String source, ChainType chainType, MintState isMinting, String device, String address, LocalDateTime takenAt, User user) {
         this.title = title;
         this.source = source;
         this.isMinting = isMinting;
+        this.chainType = chainType;
         this.device = device;
         this.address = address;
         this.takenAt = takenAt;

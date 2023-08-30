@@ -14,6 +14,6 @@ public interface MaterialRepository extends JpaRepository<Material, Long>, Mater
     Optional<Material> findByIdAndUser_Id(Long materialId, Long userId);
 
     @Modifying(clearAutomatically = true)
-    @Query(value = "UPDATE Material m SET m.nftId = :nftId, m.isMinting = :state WHERE m.id = :materialId")
-    void updateMaterialNftId(String nftId, Long materialId, MintState state);
+    @Query(value = "UPDATE Material m SET m.nftId = :nftId, m.isMinting = :state, m.chainType = :chainType WHERE m.id = :materialId")
+    void updateMaterialNftId(String nftId, Long materialId, MintState state, ChainType chainType);
 }

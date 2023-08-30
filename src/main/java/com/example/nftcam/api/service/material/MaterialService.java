@@ -7,6 +7,7 @@ import com.example.nftcam.api.dto.material.response.MaterialCardResponseDto;
 import com.example.nftcam.api.dto.material.response.MaterialDetailResponseDto;
 import com.example.nftcam.api.dto.material.response.MaterialImageSaveResponseDto;
 import com.example.nftcam.api.dto.util.DataResponseDto;
+import com.example.nftcam.api.entity.material.ChainType;
 import com.example.nftcam.api.entity.material.Material;
 import com.example.nftcam.api.entity.material.MaterialRepository;
 import com.example.nftcam.api.entity.material.MintState;
@@ -36,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -203,10 +205,11 @@ public class MaterialService {
             CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture = nftcam.mintNFT(materialMintingRequestDto.getWalletAddress(), "ipfs://" + cid + "/").sendAsync();
             String finalContractAddress = contractAddress;
             transactionReceiptCompletableFuture.thenAccept(transactionReceipt -> {
+                ChainType chainType = Objects.equals(finalContractAddress, S_CONTRACT_ADDRESS) ? ChainType.SEPOLIA : ChainType.MUMBAI;
                 // Fetch the mint events from the transaction receipt
                 List<NFTCAM.MintEventResponse> responses = NFTCAM.getMintEvents(transactionReceipt);
                 long tokenId = responses.get(0).param0.longValue();
-                materialAsyncService.publishEvent(material.getId(),   finalContractAddress + " [" + tokenId + "]");
+                materialAsyncService.publishEvent(material.getId(),   finalContractAddress + " [" + tokenId + "]", chainType);
             }).exceptionally(ex -> {
                 log.error("Error during minting NFT: {}", ex.getMessage());
                 throw CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("NFT minting에 실패했습니다. : " + ex.getMessage()).build();
