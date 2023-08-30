@@ -29,6 +29,6 @@ public class MintingEventListener {
 //        log.info("listener transactionReceiptHash : {}", event.getTransactionHash());
 //        log.info("listener blockNumber : {}", event.getBlockNum());
         userRepository.minusPoint(material.getUser().getId(),200L);
-        materialRepository.updateMaterialNftId(event.getTransactionHash(), material.getId(), MintState.MINTED);
+        materialRepository.updateMaterialNftId(event.getTransactionHash(), material.getId(), MintState.MINTED, event.getChainType());
     }
 }
