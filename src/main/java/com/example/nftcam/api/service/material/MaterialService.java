@@ -20,6 +20,14 @@ import com.example.nftcam.exception.custom.CustomException;
 import com.example.nftcam.utils.AmazonS3Uploader;
 import com.example.nftcam.utils.LocationConversion;
 import com.example.nftcam.web3.NFTCAM;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,15 +39,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import reactor.core.publisher.Mono;
-
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -138,7 +137,7 @@ public class MaterialService {
         return material.getId();
     }
 
-    @Transactional // 비동기 처리가 안되는 상황 해결해야함
+    @Transactional
     public Long mintingMaterial(UserAccount userAccount, Long materialId, MaterialMintingRequestDto materialMintingRequestDto) {
         User user = userRepository.findById(userAccount.getUserId())
                 .orElseThrow(() -> CustomException.builder().httpStatus(HttpStatus.BAD_REQUEST).message("존재하지 않는 user 입니다.").build());
